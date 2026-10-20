@@ -2,7 +2,31 @@
 
 Sistema de investigación en Python 3.12. Estima probabilidades de victoria local (H), empate (D) y victoria visitante (A), identifica EV positivo y simula apuestas. No coloca apuestas, no promete ganancias y no es un sistema listo para operar con dinero real.
 
-## Ejecutar
+## Interfaz web (recomendada)
+
+Desde la raíz del proyecto, instala las dependencias y arranca la aplicación:
+
+```bash
+python3 -m venv --system-site-packages .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m streamlit run app.py
+```
+
+Abre en tu navegador la dirección indicada por Streamlit. En el panel lateral:
+
+1. Usa **Demostración** para conocer la aplicación sin descargar datos.
+2. Selecciona **Subir CSV históricos** para cargar una o varias temporadas, o **Descargar LaLiga** si el servidor tiene acceso a football-data.co.uk.
+3. Ajusta el capital, el EV mínimo y, si lo necesitas, Kelly, límites, costes y validación temporal.
+4. Pulsa **Analizar partidos**. Cambiar un control no aplica el cambio hasta pulsar de nuevo el botón.
+5. Consulta **Capital y riesgo**, **Calidad del modelo** y **Apuestas históricas**. En **Descargas** obtienes el informe JSON y las tablas CSV.
+
+La demo está marcada como artificial. Las selecciones son retrospectivas: la aplicación no ofrece apuestas en vivo ni coloca apuestas. Los CSV subidos se procesan en archivos temporales y los resultados permanecen en la sesión; los CSV descargados tienen caché en `data/web/`.
+
+Para alojarla como app en Streamlit Community Cloud, conecta este repositorio, selecciona la rama `main`, el archivo `app.py` y Python 3.12. `requirements.txt` y `.streamlit/config.toml` incluyen las dependencias y el tema. Esto requiere completar el despliegue en tu cuenta; subir código a GitHub no crea automáticamente una URL pública. En otros servidores puedes usar `--server.address 0.0.0.0 --server.port 8501 --server.headless true` con el alojamiento y acceso web correspondientes.
+
+Las pruebas de interfaz usan el runner de Streamlit y se ejecutan junto con las del modelo mediante `python -m unittest discover -s tests -v`.
+
+## Ejecutar por consola
 
 Desde `/workspace/Algoritmo` (o la raíz de su clon):
 
