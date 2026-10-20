@@ -1,108 +1,138 @@
-# Value betting: LaLiga, mercado 1X2
+# ValueBet — app web en HTML, CSS y JavaScript
 
-Sistema de investigación en Python 3.12. Estima probabilidades de victoria local (H), empate (D) y victoria visitante (A), identifica EV positivo y simula apuestas. No coloca apuestas, no promete ganancias y no es un sistema listo para operar con dinero real.
+Aplicación de investigación de value betting para fútbol, **LaLiga, mercado 1X2**. Versión 2: el procesamiento, el modelo y la interfaz están escritos en JavaScript. No requiere Python, Streamlit, claves, frameworks, CDN ni un servidor de aplicación.
 
-## Interfaz web (recomendada)
+Estima probabilidades, compara con el mercado y simula una estrategia. **No coloca apuestas ni garantiza ganancias. Puedes perder todo el capital.**
 
-Desde la raíz del proyecto, instala las dependencias y arranca la aplicación:
+## Abrir la app
 
-```bash
-python3 -m venv --system-site-packages .venv
-.venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python -m streamlit run app.py
-```
+La forma más sencilla:
 
-Abre en tu navegador la dirección indicada por Streamlit. En el panel lateral:
+1. Descarga el repositorio con **Code → Download ZIP** y descomprímelo.
+2. Abre `index.html` en tu navegador.
+3. Pulsa **Explorar la demo**.
 
-1. Usa **Demostración** para conocer la aplicación sin descargar datos.
-2. Selecciona **Subir CSV históricos** para cargar una o varias temporadas, o **Descargar LaLiga** si el servidor tiene acceso a football-data.co.uk.
-3. Ajusta el capital, el EV mínimo y, si lo necesitas, Kelly, límites, costes y validación temporal.
-4. Pulsa **Analizar partidos**. Cambiar un control no aplica el cambio hasta pulsar de nuevo el botón.
-5. Consulta **Capital y riesgo**, **Calidad del modelo** y **Apuestas históricas**. En **Descargas** obtienes el informe JSON y las tablas CSV.
+La demo y los CSV locales funcionan sin conexión a Internet y sin instalar nada. `index.html` tiene que conservar a su lado `styles.css` y la carpeta `js/`. El modo demostración usa 2.400 partidos **artificiales** deterministas, identificados como tales en pantalla y en las exportaciones. No constituyen resultados históricos reales ni evidencia de rentabilidad.
 
-La demo está marcada como artificial. Las selecciones son retrospectivas: la aplicación no ofrece apuestas en vivo ni coloca apuestas. Los CSV subidos se procesan en archivos temporales y los resultados permanecen en la sesión; los CSV descargados tienen caché en `data/web/`.
-
-Para alojarla como app en Streamlit Community Cloud, conecta este repositorio, selecciona la rama `main`, el archivo `app.py` y Python 3.12. `requirements.txt` y `.streamlit/config.toml` incluyen las dependencias y el tema. Esto requiere completar el despliegue en tu cuenta; subir código a GitHub no crea automáticamente una URL pública. En otros servidores puedes usar `--server.address 0.0.0.0 --server.port 8501 --server.headless true` con el alojamiento y acceso web correspondientes.
-
-Las pruebas de interfaz usan el runner de Streamlit y se ejecutan junto con las del modelo mediante `python -m unittest discover -s tests -v`.
-
-## Ejecutar por consola
-
-Desde `/workspace/Algoritmo` (o la raíz de su clon):
+Opcionalmente, para servir la app por HTTP con Node.js 20 o superior:
 
 ```bash
-python3 -m venv --system-site-packages .venv
-.venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python -m unittest discover -s tests -v
-.venv/bin/python -m valuebet --demo --output outputs/demo
-.venv/bin/python -m valuebet --seasons 1819 1920 2021 2122 2223 2324 2425 --output outputs/laliga
+npm start
 ```
 
-La demo usa datos artificiales deterministas y está etiquetada `synthetic: true`. Sus métricas **no constituyen resultados históricos deportivos**, ni estimaciones de rentabilidad futura. El comando real falla explícitamente ante problemas de acceso; nunca sustituye silenciosamente los datos por una demo.
+El servidor usa el puerto 8080 o la variable `PORT`. No necesita `npm install` para arrancar: sólo utiliza módulos nativos de Node. Es un servidor estático de desarrollo, no un backend de predicción ni un sistema de usuarios. Sólo sirve los archivos de la app, sin exponer datos locales, `.git` o dependencias.
 
-Si la descarga está bloqueada, descargue los CSV en una máquina autorizada y cópielos a `data/`. Después:
+## Uso
 
-```bash
-.venv/bin/python -m valuebet --csv data/SP1_1819.csv data/SP1_1920.csv data/SP1_2021.csv data/SP1_2122.csv data/SP1_2223.csv data/SP1_2324.csv data/SP1_2425.csv --output outputs/laliga
-```
+1. **Fuente:** demostración, CSV locales o descarga de LaLiga.
+2. **Estrategia:** capital inicial y EV mínimo. En las opciones avanzadas se ajustan Kelly, límites por apuesta/fecha, comisión, deslizamiento y separación temporal.
+3. **Ejecutar análisis:** los controles se bloquean mientras se calcula. Los cambios posteriores se señalan y sólo se aplican al ejecutar nuevamente.
+4. **Capital y riesgo:** curva de saldo, ROI, retorno del capital, drawdown e intervalo descriptivo.
+5. **Calidad del modelo:** log-loss, Brier y comparación con mercado sin margen, detalle de folds y filas descartadas.
+6. **Apuestas históricas:** paginación y filtro ganadas/perdidas; selecciones retrospectivas, no apuestas futuras.
+7. **Descargas:** informe JSON, probabilidades, apuestas y saldo en CSV. Los parámetros utilizados quedan en el informe.
 
-Los ejemplos inicializan 760 partidos de entrenamiento; conjuntos menores necesitan `--min-train` apropiado y suficientes resultados de las tres clases. `--help` describe todos los parámetros. No se necesitan claves ni servidores persistentes.
+Los archivos se procesan en tu navegador y no se envían a un backend. Los resultados permanecen en memoria hasta recargar; descarga lo que quieras conservar. La descarga externa de temporadas sí hace solicitudes HTTPS al proveedor.
 
-## Fuentes y limpieza
+## Datos históricos gratuitos
 
-- [Football-data.co.uk: España](https://www.football-data.co.uk/spainm.php): CSV gratuitos por temporada con resultados, estadísticas y cuotas. Endpoint usado: `https://www.football-data.co.uk/mmz4281/2425/SP1.csv`; `2425` corresponde a 2024/25. [Notas de campos y fuentes](https://www.football-data.co.uk/notes.txt). Verificar condiciones de uso, cobertura y calidad antes de redistribuir.
-- Los CSV contienen también tiros y otras estadísticas según temporada; esta primera versión descarga el archivo completo pero utiliza goles, puntos y cuotas Bet365 para mantener columnas consistentes. Nunca usa estadísticas del partido a predecir como entrada.
-- [football-data.org](https://www.football-data.org/): alternativa con plan gratuito y clave para resultados/calendarios; verificar la cobertura vigente. No se implementa aquí y no sustituye un archivo histórico de cuotas.
-- Las cuotas históricas gratuitas no garantizan un historial de precios ejecutables ni marcas de tiempo precisas. Para uso prospectivo se necesita una fuente autorizada con instante de captura y disponibilidad real; no se presupone una API gratuita con ese historial.
-
-`data.py` descarga con TLS normal y timeout; guarda URL y SHA-256 junto al CSV nuevo. Conserva caché local; para actualizar una temporada hay que retirar explícitamente su CSV y metadatos. El hash documenta los bytes, no certifica la exactitud de los datos del proveedor. Analiza fechas día/mes, convierte números, rechaza goles inválidos, cuotas no finitas o ≤1, campos ausentes y resultados inconsistentes; informa descartes y rechaza duplicados. Los registros sin las tres cuotas no entran en la comparación. No imputa precios ni combina casas para construir un precio imposible.
-
-## Modelo y validación
-
-Regresión logística multiclase con escalado y regularización fija `C=0.1`. Variables: media de puntos, goles a favor y en contra de los cinco partidos anteriores de cada equipo, las mismas medias en casa/fuera y número de observaciones recientes. Para equipos sin historia se usan priors fijos (1 punto, 1.2 goles a favor/en contra); no se estiman con datos futuros. Se conserva la historia entre temporadas, una simplificación explícita. El orden local/visitante y los historiales específicos reflejan la localía.
-
-Walk-forward de ventana expansiva: entrenamiento únicamente con fechas anteriores al bloque de prueba, reentrenamiento cada 90 días (`--block-days`), sin particiones aleatorias. El escalador se ajusta sólo en entrenamiento. Durante un bloque se incorporan a las variables los resultados ya conocidos de fechas anteriores; los coeficientes del modelo permanecen fijos hasta el siguiente bloque. Todos los partidos de la misma fecha usan el historial previo a esa fecha, incluso si tienen horarios diferentes.
-
-`report.json` guarda límites y tamaños de cada fold, parámetros y métricas agregadas fuera de muestra:
-
-- **Log-loss**: menor es mejor; penaliza mucho la confianza errónea.
-- **Brier multiclase**: media de la suma de tres errores cuadrados, rango 0–2; menor es mejor.
-- **Mercado sin margen**: `q_i = (1/cuota_i) / sum(1/cuota_j)` usando las mismas cuotas y partidos. Es una normalización proporcional, no una probabilidad verdadera demostrada. El overround es `sum(1/cuota)-1`.
-
-No se incluyen las cuotas en las variables del modelo. B365H/D/A se usan como precio de referencia; no se usan B365CH/CD/CA de cierre. La ausencia de timestamp exacto impide garantizar que el precio existiera después de todos los resultados usados en las variables: la validación de resultados es temporal, pero la ejecutabilidad histórica de las cuotas **no está certificada**. No interpretar este backtest como una prueba de ejecución real.
-
-## EV, Kelly y costes
-
-Para cada partido se considera sólo el resultado con EV máximo y se apuesta sólo si supera estrictamente `--threshold` (5% por defecto). Esto evita apuestas correlacionadas sobre varios resultados del mismo partido.
+[Football-data.co.uk, España](https://www.football-data.co.uk/spainm.php) ofrece resultados, estadísticas y cuotas en CSV por temporada. [Notas de columnas](https://www.football-data.co.uk/notes.txt). Endpoint de ejemplo:
 
 ```
-cuota_efectiva = 1 + (cuota - 1) × (1 - haircut) × (1 - comisión)
+https://www.football-data.co.uk/mmz4281/2425/SP1.csv
+```
+
+`2425` significa 2024/25; el código SP1 corresponde a primera división española. La app permite descargar varias temporadas, pero el navegador puede bloquearlo por CORS y la red de alojamiento puede impedir el acceso. **No se desactiva CORS ni se usan proxies sin autorización.** Si falla, descarga los archivos desde la página del proveedor y cárgalos con **Mis archivos CSV**. No hay sustitución silenciosa por datos sintéticos.
+
+Columnas obligatorias:
+
+```text
+Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,B365H,B365D,B365A
+```
+
+H/D/A significan victoria local, empate y victoria visitante. La app acepta CSV con comas o punto y coma, campos entre comillas, BOM y fechas `dd/mm/aaaa`, `dd/mm/aa` o `aaaa-mm-dd`. Rechaza archivos mal formados, columnas ausentes, partidos duplicados y elimina filas sin datos válidos. Verifica goles enteros no negativos, resultado coherente y cuotas finitas > 1. Muestra los descartes por archivo, sin imputar precios. Máximo 20 MB de archivos subidos y 15.000 partidos por análisis.
+
+Aunque los archivos contienen otras estadísticas, esta versión usa goles/puntos históricos y cuotas para conservar una cobertura consistente. No usa estadísticas del propio partido a predecir como entrada. Revisar siempre las condiciones de uso del proveedor antes de redistribuir datos.
+
+Alternativa: [football-data.org](https://www.football-data.org/) ofrece API con plan gratuito y clave para calendarios y resultados (revisar cobertura vigente). No se implementa esa API; tampoco se presupone que incluya histórico gratuito de cuotas.
+
+## Motor predictivo y prevención de fuga de datos
+
+Regresión logística softmax multiclase implementada en `js/core.js`. Estandarización aprendida únicamente del entrenamiento. Descenso de gradiente determinista: 180 épocas, tasa 0.12, penalización L2 0.01 sobre coeficientes, sin penalizar interceptos. Son valores fijados de antemano, sin optimizarlos sobre las pruebas. No es una réplica numérica de la antigua versión scikit-learn; las salidas pueden diferir.
+
+Variables de cada equipo: medias de puntos, goles a favor y en contra en sus últimos cinco partidos; las mismas medias en condición local/visitante; cantidad de partidos en el historial reciente. Se añaden Elo (base 1500, K=20, ventaja local 60), días de descanso hasta un máximo de 30 con indicador de historial, carga observada de 14 días y últimos cinco enfrentamientos directos. xG y posesión en último tercio se incorporan como medias rezagadas sólo si el CSV aporta las columnas opcionales. Ver [contrato y referencia](REFERENCE.md). Al no existir historial se usan priors fijos: 1 punto y 1.2 goles a favor/en contra. Se mantiene historia entre temporadas. El modelo no incorpora lesiones, alineaciones ni calibración posterior. Elo aporta una medida de fuerza relativa. Las probabilidades estimadas no deben asumirse perfectamente calibradas.
+
+Como alternativa seleccionable, `Gradient boosting` utiliza 70 rondas de árboles de un nivel (stumps) por clase, tasa 0.15 y regularización 1. Las divisiones candidatas son cuantiles aprendidos sólo en entrenamiento, con al menos 15 registros por hoja. No es la librería XGBoost ni un modelo neuronal, y no implica que mejore al baseline. Ambos modelos usan las mismas variables y validación; el informe identifica el elegido.
+
+Walk-forward de ventana expansiva: 760 partidos iniciales, bloques de 90 días por defecto. Entrena sólo con fechas estrictamente anteriores al bloque. Dentro del bloque los coeficientes permanecen fijos y las variables se actualizan con resultados conocidos de fechas anteriores. Todos los partidos de una misma fecha usan el estado anterior a esa fecha, sin reinversión de información intradía. Los folds, límites y tamaños se exportan. Nunca se divide aleatoriamente. Se limita a 100 bloques ocupados por análisis para evitar cargas excesivas en el navegador.
+
+**Log-loss** penaliza especialmente la confianza errónea; **Brier** es la media de la suma de tres errores cuadrados, con rango 0–2. Menor es mejor. El mercado se compara en los mismos partidos: `q_i = (1/cuota_i) / sum(1/cuota_j)`. El overround es `sum(1/cuota)-1`. La normalización proporcional no convierte automáticamente el precio en la probabilidad verdadera.
+
+No se incluyen cuotas como variables del modelo. Se utilizan B365H/D/A para comparar y liquidar, no cuotas de cierre B365CH/CD/CA. Sin timestamp preciso no se certifica que el precio estuviera disponible después de los resultados usados en las variables. La separación temporal de resultados **no demuestra ejecutabilidad histórica de las cuotas**.
+
+## EV, costes y gestión de capital
+
+```
+cuota_efectiva = 1 + (cuota - 1) × (1 - comisión) × (1 - deslizamiento)
 EV = p_modelo × cuota_efectiva - 1
 Kelly = max(0, (p_modelo × cuota_efectiva - 1) / (cuota_efectiva - 1))
-fracción = min(tope, Kelly × fracción_Kelly)
+fracción = min(tope_por_apuesta, Kelly × fracción_Kelly)
 ```
 
-Valores iniciales: bankroll 1.000 unidades, 1/4 de Kelly, tope del 2% por apuesta y exposición agregada máxima del 10% por fecha. Si se supera el límite diario, las apuestas se reducen proporcionalmente. Se usa el saldo al inicio del día para todas sus apuestas y se liquida al final; no hay reinversión de ganancias intrajornada.
+Como máximo una selección por partido, la de EV máximo; sólo si supera estrictamente el umbral. Por defecto: 1.000 unidades, EV > 5%, 1/4 de Kelly, tope individual 2%, exposición agregada diaria 10%. Si se supera la exposición diaria, todas las apuestas del día se reducen proporcionalmente. Los importes usan el saldo al inicio de la fecha; se liquidan juntos sin reinvertir ganancias intradía.
 
-El margen de la casa ya está incluido en las cuotas ofrecidas: no se resta otra vez. La comisión adicional por defecto del 2% de ganancias es una hipótesis conservadora configurable, no una tarifa atribuida a Bet365. Use `--commission 0` para una casa sin comisión adicional. `--haircut .01` reduce un 1% la parte de beneficio de la cuota para estudiar deslizamiento. No modela impuestos, límites de cuenta, rechazos, apuestas anuladas ni cambios de precio intradía.
+El margen de la casa ya está incluido en los precios ofrecidos y no se resta dos veces. La comisión adicional por defecto, 2% de ganancias, es una hipótesis conservadora configurable; **no** una tarifa atribuida a Bet365. Para una casa sin comisión adicional selecciona 0%. Deslizamiento reduce la parte de beneficio de la cuota. No se modelan impuestos, apuestas anuladas, rechazos, límites de cuentas ni fluctuaciones intradía.
 
-## Interpretación e incertidumbre
+ROI = beneficio / total apostado. Retorno del capital = saldo final / saldo inicial − 1. Drawdown máximo = mayor caída desde un máximo previo, al cierre de las fechas, incluyendo el saldo inicial. Sin apuestas, ROI e intervalo son nulos. El drawdown no es el peor riesgo futuro ni incluye variaciones intradía.
 
-Salidas en el directorio elegido:
+## Incertidumbre y límites
 
-- `report.json`: métricas, parámetros, folds y resumen económico.
-- `predictions.csv`: probabilidades fuera de muestra de cada resultado y cuotas.
-- `bets.csv`: selección, probabilidad, EV neto de costes, importe y beneficio realizado.
-- `equity.csv`: saldo por fecha; drawdown calculado respecto al máximo histórico, incluyendo el saldo inicial.
+El informe exportado incluye fecha de generación, especificación del modelo y hashes SHA-256 del texto de entrada cuando Web Crypto está disponible. Se incluyen todas las apuestas, aunque la tabla visual esté filtrada. La fecha de generación de un backtest no es una prueba de predicción anterior al partido; el archivo descargado es mutable.
 
-ROI = beneficio neto / importe total apostado; rentabilidad del bankroll = saldo final / inicial − 1. No confundir ambas. Sin apuestas el ROI y el intervalo son nulos. Se informa el número de apuestas y el drawdown máximo observado a cierre diario; no representa pérdidas intradía ni el peor escenario futuro.
+Intervalo descriptivo del ROI al 95% mediante 2.000 remuestreos de bloques semanales, incluyendo semanas sin apuestas. Conserva importes realizados: no reentrena ni recalcula Kelly para cada remuestreo. Presupone intercambiabilidad de bloques y puede subestimar dependencias largas, cambios de régimen, incertidumbre del modelo y selección de parámetros. **No es un intervalo predictivo ni una estimación de la probabilidad de ruina.**
 
-Se calcula un intervalo descriptivo de ROI del 95% mediante 2.000 remuestreos de bloques semanales que incluyen semanas sin apuestas. Conserva las apuestas e importes realizados: **no** reentrena el modelo ni recalcula Kelly en cada remuestreo. Supone intercambiabilidad de bloques, puede subestimar dependencias largas, cambios de régimen, incertidumbre del modelo y selección de hiperparámetros. No es una garantía ni un intervalo predictivo; tampoco estima la probabilidad de ruina. Un intervalo que cruza cero es evidencia insuficiente de ventaja, y uno positivo tampoco la demuestra por sí solo.
+Un intervalo que cruza cero indica evidencia insuficiente de ventaja; uno positivo tampoco prueba rentabilidad futura. No seleccionar umbrales/variables buscando el mejor ROI sobre los mismos datos de prueba. Congelar decisiones y evaluar una temporada intacta o realizar una evaluación prospectiva antes de usar dinero real.
 
-No ajustar umbrales, variables o Kelly buscando el mejor ROI en estas mismas pruebas. Congelar decisiones y evaluar después en una temporada intacta o con evaluación prospectiva. La regularización no elimina el sobreajuste; probabilidades mal calibradas hacen que Kelly sobredimensione apuestas. Esta versión no incorpora lesiones, alineaciones, calidad del rival explícita, calibración anidada ni cambios de entrenador. Forma reciente y datos históricos pueden dejar de ser informativos.
+Sobreajuste, datos deficientes, mala calibración, margen, varianza y costes pueden provocar pérdidas sostenidas y pérdida total del capital. Usar para investigación y respetar la legislación aplicable. No apostar dinero necesario para gastos esenciales.
 
-El margen, la varianza, los errores de datos, el sobreajuste y los costes pueden causar pérdidas sostenidas y **pérdida total del capital**. No existe garantía de ganancia. Usar sólo para investigación, respetar la legislación y no arriesgar dinero necesario para gastos esenciales.
+## Referencia solicitada: DeepBetting
+
+Se analizaron los extractos del artículo pegados por el usuario. Se integraron Elo, descanso, densidad del calendario, enfrentamientos previos, métricas avanzadas opcionales y un modelo de árboles potenciados. [REFERENCE.md](REFERENCE.md) detalla la correspondencia, los contratos de datos y las afirmaciones que no se pueden verificar. No se reproduce ni se atribuye a esta app el motor propietario de DeepBetting.
+
+## Pruebas
+
+Las pruebas del motor no requieren dependencias:
+
+```bash
+npm test
+```
+
+Comprueban parsing/limpieza, fechas y duplicados; causalidad temporal, incluidas fechas compartidas; entrenamiento real y probabilidades; Kelly, costes, topes y liquidación; métricas con valores conocidos; escape de CSV y demo walk-forward completa.
+
+Pruebas de navegador con Playwright:
+
+```bash
+npm ci --cache /tmp/valuebet-npm-cache
+# Linux con Chromium instalado:
+npm run test:web
+# Para otra instalación, indicar CHROMIUM_PATH con la ruta al ejecutable.
+```
+
+El runner usa `/usr/bin/chromium` por defecto y levanta su propio servidor en el puerto 8099. Verifica demo por HTTP y abriendo `index.html` directamente, CSV, errores de configuración, exportación real, paginación, tratamiento seguro de nombres de equipos y vista móvil. La prueba de apertura directa puede quedar omitida si la política administrada de Chromium bloquea `file://`; el runner lo declara expresamente y no desactiva esa política. Capturas en `outputs/web/`. El puerto 8099 debe estar libre.
+
+## Publicación como sitio web
+
+Todos los archivos son estáticos. Puedes alojar `index.html`, `styles.css` y `js/` en GitHub Pages, Netlify o un servicio equivalente. No hay compilación ni backend Python. En GitHub, configura **Settings → Pages → Deploy from a branch → main → /(root)** y guarda. Esta operación requiere acceso a la configuración del repositorio; el código subido por sí solo no garantiza que Pages esté activado. No se afirma una URL pública hasta verificar el despliegue.
+
+En este entorno, las instrucciones de arranque y configuración se guardan para revisión; los procesos no sobreviven necesariamente a restauraciones. Abrir el archivo local es independiente de que exista o no una vista previa pública del entorno.
 
 ## Estructura
 
-`valuebet/data.py`: datos y demo; `model.py`: variables/modelo/validación; `backtest.py`: staking, liquidación e incertidumbre; `__main__.py`: interfaz y artefactos. `tests/test_core.py` comprueba causalidad temporal (incluida la misma fecha), separación de folds, probabilidades, Kelly, límites y liquidación.
+- `index.html`: estructura accesible y controles en español.
+- `styles.css`: interfaz responsive, estados y tema visual.
+- `js/core.js`: CSV, variables, softmax, walk-forward, EV, Kelly, backtest y bootstrap; reutilizable en Node.
+- `js/app.js`: interacción, tablas, gráfica SVG y exportaciones, sin frameworks.
+- `server.js`: servidor estático opcional de desarrollo.
+- `tests/`: pruebas del motor y navegador.
+
+La migración retira la aplicación Python/Streamlit del árbol actual; su código permanece en el historial Git anterior a la versión 2.

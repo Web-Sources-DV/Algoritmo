@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Analiza probabilidades, valor esperado y riesgo en LaLiga. Herramienta de investigación deportiva sin garantía de ganancias."
+    />
+    <title>ValueBet · Laboratorio deportivo</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="js/core.js"></script>
+    <script defer src="js/app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Saltar al contenido</a>
+    <aside class="sidebar">
+      <a class="brand" href="index.html" aria-label="ValueBet, inicio"
+        ><span class="brand-icon">V<span>↗</span></span
+        >valuebet<span class="brand-dot">.</span></a
+      >
+      <p class="eyebrow">LABORATORIO DEPORTIVO</p>
+      <form id="analysis-form">
+        <div class="section-heading">
+          <span class="step">01</span>
+          <h2>Elige tus datos</h2>
+        </div>
+        <label for="source">Fuente de partidos</label>
+        <select id="source">
+          <option value="demo">Demostración interactiva</option>
+          <option value="csv">Mis archivos CSV</option>
+          <option value="download">Descargar LaLiga</option>
+        </select>
+        <p id="source-help" class="help">
+          2.400 partidos artificiales para explorar la herramienta.
+        </p>
+        <div id="csv-controls" hidden>
+          <label class="upload" for="files"
+            ><span>↑</span> Seleccionar archivos CSV<input
+              id="files"
+              type="file"
+              accept=".csv,text/csv"
+              multiple
+          /></label>
+          <p id="file-list" class="help">Puedes cargar varias temporadas.</p>
+        </div>
+        <div id="download-controls" hidden>
+          <label for="seasons">Temporadas (separadas por comas)</label
+          ><input
+            id="seasons"
+            value="1516,1617,1718,1819,1920,2021,2122,2223,2324,2425"
+          />
+          <p class="help">
+            La descarga depende del permiso CORS del proveedor. También puedes
+            descargar los CSV y cargarlos aquí.
+          </p>
+          <a
+            href="https://www.football-data.co.uk/spainm.php"
+            target="_blank"
+            rel="noopener"
+            >Abrir fuente de datos ↗</a
+          >
+        </div>
+        <div class="section-heading">
+          <span class="step">02</span>
+          <h2>Configura tu estrategia</h2>
+        </div>
+        <label for="model">Modelo predictivo</label
+        ><select id="model">
+          <option value="logistic">
+            Regresión logística · base transparente
+          </option>
+          <option value="boosting">
+            Gradient boosting · árboles potenciados
+          </option>
+        </select>
+        <p class="help">
+          Ambos usan Elo, descanso, calendario y forma. xG y último tercio
+          requieren datos adicionales.
+        </p>
+        <label for="bankroll">Capital inicial <span>unidades</span></label
+        ><input
+          id="bankroll"
+          type="number"
+          min="1"
+          max="1000000000"
+          step="any"
+          value="1000"
+          required
+        />
+        <label for="threshold"
+          >EV mínimo <output id="ev-label" for="threshold">5%</output></label
+        ><input
+          id="threshold"
+          type="range"
+          min="0"
+          max="50"
+          step="0.5"
+          value="5"
+        />
+        <p class="help">
+          Sólo selecciones cuyo valor esperado neto supere este umbral.
+        </p>
+        <details>
+          <summary>Riesgo y costes</summary>
+          <div class="input-grid">
+            <div>
+              <label for="fraction">Kelly (%)</label
+              ><input
+                id="fraction"
+                type="number"
+                min="1"
+                max="100"
+                step="any"
+                value="25"
+                required
+              />
+            </div>
+            <div>
+              <label for="cap">Tope por apuesta (%)</label
+              ><input
+                id="cap"
+                type="number"
+                min="0.1"
+                max="100"
+                step="any"
+                value="2"
+                required
+              />
+            </div>
+            <div>
+              <label for="dailyCap">Tope por fecha (%)</label
+              ><input
+                id="dailyCap"
+                type="number"
+                min="0.1"
+                max="100"
+                step="any"
+                value="10"
+                required
+              />
+            </div>
+            <div>
+              <label for="commission">Comisión (%)</label
+              ><input
+                id="commission"
+                type="number"
+                min="0"
+                max="99"
+                step="any"
+                value="2"
+                required
+              />
+            </div>
+            <div>
+              <label for="haircut">Deslizamiento (%)</label
+              ><input
+                id="haircut"
+                type="number"
+                min="0"
+                max="99"
+                step="any"
+                value="0"
+                required
+              />
+            </div>
+          </div>
+        </details>
+        <details>
+          <summary>Validación temporal</summary>
+          <label for="minTrain">Partidos iniciales de entrenamiento</label
+          ><input
+            id="minTrain"
+            type="number"
+            min="100"
+            max="14000"
+            step="1"
+            value="760"
+            required
+          /><label for="blockDays">Días por bloque de prueba</label
+          ><input
+            id="blockDays"
+            type="number"
+            min="1"
+            max="730"
+            step="1"
+            value="90"
+            required
+          />
+          <p class="help">
+            El modelo aprende sólo de fechas anteriores al bloque evaluado.
+          </p>
+        </details>
+        <button class="button primary" id="run" type="submit">
+          Ejecutar análisis <span>↗</span>
+        </button>
+        <p class="local-note">
+          <span>●</span> Tus archivos se procesan en tu navegador.
+        </p>
+      </form>
+      <div class="sidebar-bottom">
+        HECHO PARA INVESTIGAR<br /><span
+          >Sin apuestas automáticas. Sin promesas.</span
+        >
+      </div>
+    </aside>
+    <main id="main">
+      <header class="topbar">
+        <span
+          >WORKSPACE <span class="slash">/</span>
+          <strong>LaLiga · 1X2</strong></span
+        ><span class="browser-badge"><i></i> HTML + CSS + JavaScript</span>
+      </header>
+      <section class="intro">
+        <div>
+          <p class="eyebrow">PROBABILIDADES, NO CORAZONADAS</p>
+          <h1>Encuentra valor.<br /><span>Entiende el riesgo.</span></h1>
+          <p>
+            Un espacio para contrastar tu modelo con el mercado<br
+              class="desktop"
+            />
+            y poner a prueba una estrategia antes de arriesgar capital.
+          </p>
+        </div>
+        <div class="intro-mark" aria-hidden="true">
+          <span>p × cuota − 1</span><strong>EV<span>↗</span></strong
+          ><small>EL VALOR EMPIEZA EN LOS DATOS</small>
+        </div>
+      </section>
+      <div class="risk-note">
+        <span aria-hidden="true">!</span>
+        <p>
+          <strong>La ventaja estimada no es una garantía.</strong> Puedes perder
+          todo el capital. Los resultados históricos y las simulaciones no
+          aseguran ganancias futuras.
+        </p>
+      </div>
+      <section id="status" class="status" hidden aria-live="polite">
+        <p id="status-text"></p>
+        <progress id="progress" max="100" value="0"></progress>
+      </section>
+      <div id="error" class="error" role="alert" hidden></div>
+      <p id="stale" class="notice" hidden>
+        Has cambiado la configuración. Los resultados siguen correspondiendo al
+        último análisis; pulsa «Ejecutar análisis» para actualizarlos.
+      </p>
+      <section id="welcome" class="welcome">
+        <div class="welcome-title">
+          <span class="pill">EMPIEZA AQUÍ</span>
+          <h2>Tu próxima decisión, con más contexto.</h2>
+          <p>
+            Elige una fuente y ejecuta el análisis desde el panel. No necesitas
+            instalar nada.
+          </p>
+        </div>
+        <div class="feature-grid">
+          <article>
+            <span>01 / DATOS</span>
+            <h3>Del historial a la probabilidad</h3>
+            <p>
+              Elo, descanso y forma reciente. xG y último tercio sólo si tus
+              datos los incluyen.
+            </p>
+          </article>
+          <article>
+            <span>02 / VALIDACIÓN</span>
+            <h3>El mercado como referencia</h3>
+            <p>
+              Log-loss y Brier score comparan las estimaciones con las cuotas
+              sin margen.
+            </p>
+          </article>
+          <article>
+            <span>03 / CONTROL</span>
+            <h3>El riesgo a la vista</h3>
+            <p>
+              Kelly fraccionado, límites de exposición y evolución del capital
+              por fecha.
+            </p>
+          </article>
+        </div>
+        <button id="quick-demo" class="button secondary" type="button">
+          Explorar la demo <span>→</span>
+        </button>
+      </section>
+      <section id="results" hidden aria-label="Resultados del análisis">
+        <div class="results-heading">
+          <div>
+            <span id="data-badge" class="pill"></span>
+            <h2>El resultado de tu estrategia</h2>
+            <p id="period" class="muted"></p>
+          </div>
+          <button id="export-report" class="button secondary" type="button">
+            ↓ Informe JSON
+          </button>
+        </div>
+        <p id="demo-warning" class="demo-note" hidden>
+          DATOS ARTIFICIALES · Estas cifras no representan LaLiga ni acreditan
+          rentabilidad real.
+        </p>
+        <div class="metrics">
+          <article>
+            <p>Capital final <span>u.</span></p>
+            <strong id="metric-bankroll">—</strong
+            ><small id="metric-return"></small>
+          </article>
+          <article>
+            <p>ROI sobre apuestas</p>
+            <strong id="metric-roi">—</strong
+            ><small>Beneficio / total apostado</small>
+          </article>
+          <article>
+            <p>Drawdown máximo</p>
+            <strong id="metric-drawdown">—</strong
+            ><small>Caída desde un máximo previo</small>
+          </article>
+          <article>
+            <p>Apuestas simuladas</p>
+            <strong id="metric-bets">—</strong
+            ><small id="metric-staked"></small>
+          </article>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Secciones del análisis">
+          <button
+            id="tab-capital"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-capital"
+            tabindex="0"
+          >
+            Capital y riesgo</button
+          ><button
+            id="tab-model"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-model"
+            tabindex="-1"
+          >
+            Calidad del modelo</button
+          ><button
+            id="tab-bets"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-bets"
+            tabindex="-1"
+          >
+            Apuestas históricas</button
+          ><button
+            id="tab-downloads"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-downloads"
+            tabindex="-1"
+          >
+            Descargas
+          </button>
+        </div>
+        <section
+          id="panel-capital"
+          class="panel"
+          role="tabpanel"
+          aria-labelledby="tab-capital"
+        >
+          <div class="panel-heading">
+            <div>
+              <h3>Evolución del capital</h3>
+              <p>Saldo al cierre de cada fecha · unidades</p>
+            </div>
+            <span class="legend"><i></i> Estrategia simulada</span>
+          </div>
+          <div id="equity-chart" class="chart"></div>
+          <div class="chart-caption">
+            <span id="chart-start"></span><span id="chart-end"></span>
+          </div>
+          <div class="uncertainty">
+            <span class="eyebrow">INCERTIDUMBRE ESTADÍSTICA</span>
+            <p id="interval"></p>
+            <small
+              >Bootstrap de bloques semanales (2.000 remuestreos). Conserva
+              importes realizados; no reentrena el modelo. Intervalo
+              descriptivo, no predictivo.</small
+            >
+          </div>
+        </section>
+        <section
+          id="panel-model"
+          class="panel"
+          role="tabpanel"
+          aria-labelledby="tab-model"
+          hidden
+        >
+          <h3>Modelo frente al mercado</h3>
+          <p class="muted">
+            Menor es mejor. Brier multiclase usa la suma de tres errores
+            cuadrados (rango 0–2).
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Referencia</th>
+                  <th>Log-loss</th>
+                  <th>Brier score</th>
+                </tr>
+              </thead>
+              <tbody id="model-table"></tbody>
+            </table>
+          </div>
+          <p id="model-context" class="muted"></p>
+          <h3>Bloques de validación temporal</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Entrena hasta</th>
+                  <th>Prueba desde</th>
+                  <th>Prueba hasta</th>
+                  <th>Entrena</th>
+                  <th>Evalúa</th>
+                </tr>
+              </thead>
+              <tbody id="folds-table"></tbody>
+            </table>
+          </div>
+          <h3>Control de datos</h3>
+          <div id="audit" class="muted"></div>
+          <p id="data-coverage" class="muted"></p>
+        </section>
+        <section
+          id="panel-bets"
+          class="panel"
+          role="tabpanel"
+          aria-labelledby="tab-bets"
+          hidden
+        >
+          <div class="panel-heading">
+            <div>
+              <h3>Selecciones históricas con valor</h3>
+              <p>
+                H: local · D: empate · A: visitante. Son simulaciones
+                retrospectivas, no apuestas en vivo.
+              </p>
+            </div>
+            <label class="filter-label" for="bet-filter"
+              >Resultado<select id="bet-filter">
+                <option value="all">Todas</option>
+                <option value="won">Ganadas</option>
+                <option value="lost">Perdidas</option>
+              </select></label
+            >
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Partido</th>
+                  <th>Selección</th>
+                  <th>Prob.</th>
+                  <th>Cuota neta</th>
+                  <th>EV</th>
+                  <th>Apuesta</th>
+                  <th>Beneficio</th>
+                </tr>
+              </thead>
+              <tbody id="bets-table"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <span id="page-info" class="muted"></span>
+            <div>
+              <button id="prev-page" class="button secondary" type="button">
+                ← Anterior</button
+              ><button id="next-page" class="button secondary" type="button">
+                Siguiente →
+              </button>
+            </div>
+          </div>
+        </section>
+        <section
+          id="panel-downloads"
+          class="panel"
+          role="tabpanel"
+          aria-labelledby="tab-downloads"
+          hidden
+        >
+          <h3>Lleva contigo el análisis</h3>
+          <p class="muted">
+            Archivos generados en tu navegador. El informe incluye los
+            parámetros que produjeron estos resultados.
+          </p>
+          <div class="download-grid">
+            <button class="download-card" data-export="report">
+              Informe completo <span>JSON ↓</span></button
+            ><button class="download-card" data-export="predictions">
+              Probabilidades 1X2 <span>CSV ↓</span></button
+            ><button class="download-card" data-export="bets">
+              Apuestas simuladas <span>CSV ↓</span></button
+            ><button class="download-card" data-export="equity">
+              Evolución del capital <span>CSV ↓</span>
+            </button>
+          </div>
+          <h3>Configuración utilizada</h3>
+          <pre id="parameters"></pre>
+        </section>
+      </section>
+      <details class="methodology">
+        <summary>Metodología, fuentes y límites del análisis</summary>
+        <div>
+          <h3>Qué estima el modelo</h3>
+          <p>
+            Regresión logística multiclase L2 o gradient boosting de árboles de
+            un nivel, según tu elección. Utiliza Elo, días de descanso, carga de
+            calendario de 14 días, enfrentamientos previos y forma de los
+            últimos cinco partidos. xG y posesión en último tercio sólo con
+            datos aportados y siempre rezagados. El escalado se aprende sólo en
+            entrenamiento. Cada fecha usa únicamente resultados de fechas
+            anteriores.
+          </p>
+          <h3>Cómo se simula</h3>
+          <p>
+            EV = probabilidad × cuota efectiva − 1. Como máximo una selección
+            por partido. Kelly fraccionado con tope por apuesta y exposición
+            diaria; se calcula con el saldo de apertura, sin reinvertir
+            ganancias intrajornada. El margen ya está en las cuotas. Comisión y
+            deslizamiento son costes adicionales configurables, no tarifas
+            atribuidas a una casa.
+          </p>
+          <h3>Datos y limitaciones</h3>
+          <p>
+            Fuente histórica:
+            <a
+              href="https://www.football-data.co.uk/spainm.php"
+              target="_blank"
+              rel="noopener"
+              >football-data.co.uk</a
+            >, CSV SP1 con cuotas B365H/D/A. No hay timestamp preciso del
+            precio: la ejecución real a esa cuota no está certificada. Estos
+            modelos no replican el algoritmo propietario de DeepBetting. Su
+            artículo describe XGBoost y redes neuronales sin publicar el código
+            ni los datos. No se incluyen lesiones, viajes o alineaciones sin
+            fuentes verificables, ni calibración posterior. La historia se
+            conserva entre temporadas.
+          </p>
+          <p>
+            Sobreajuste, mala calibración, dependencia entre apuestas y cambios
+            de régimen pueden causar pérdidas. El intervalo bootstrap no estima
+            ruina ni cubre toda la incertidumbre del modelo. No optimices
+            parámetros sobre el mismo periodo usado para evaluar. No hay
+            garantía de ganancias; respeta la legislación y no arriesgues dinero
+            necesario para tus gastos.
+          </p>
+        </div>
+      </details>
+      <footer>
+        <span>valuebet. <span>Investigación con criterio.</span></span
+        ><span>HTML · CSS · JavaScript / v2.0</span>
+      </footer>
+    </main>
+  </body>
+</html>
